@@ -1,105 +1,127 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+// Variáveis de ambiente
+const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
-interface RequestBody {
-  user_id: string
-  audio_url: string
-  call_id?: string
+// Tipagem do corpo da requisição
+interface CorpoDaSolicitacao {
+  ID_do_usuario: string;
+  url_de_audio: string;
+  id_da_chamada?: string;
 }
 
 serve(async (req) => {
   try {
-    const { user_id, audio_url, call_id }: RequestBody = await req.json()
+    const { ID_do_usuario, url_de_audio, id_da_chamada }: CorpoDaSolicitacao =
+      await req.json();
 
-    // Baixar áudio
-    const audioResponse = await fetch(audio_url)
-    const audioBlob = await audioResponse.blob()
+    // ================================
+    // 1. BAIXAR ÁUDIO DO ARQUIVO
+    // ================================
+    const respostaAudio = await fetch(url_de_audio);
+    const blobAudio = await respostaAudio.blob();
 
-    // Transcrever com Whisper
-    const formData = new FormData()
-    formData.append('file', audioBlob, 'audio.mp3')
-    formData.append('model', 'whisper-1')
-    formData.append('language', 'pt')
+    // ================================
+    // 2. TRANSCRITAR ÁUDIO COM WHISPER
+    // ================================
+    const form = new FormData();
+    form.append("file", blobAudio, "audio.mp3");
+    form.append("model", "whisper-1");
+    form.append("language", "pt");
 
-    const whisperResponse = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-      },
-      body: formData,
-    })
+    const respostaWhisper = await fetch(
+      "https://api.openai.com/v1/audio/transcriptions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${OPENAI_API_KEY}`,
+        },
+        body: form,
+      }
+    );
 
-    const whisperData = await whisperResponse.json()
-    const transcription = whisperData.text
+    const dadosTranscricao = await respostaWhisper.json();
+    const transcricao = dadosTranscricao.text;
 
-    // Gerar resumo com GPT
-    const summaryResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: 'Você é um assistente que resume chamadas telefônicas. Extraia os pontos principais, ações necessárias e informações importantes.'
-          },
-          {
-            role: 'user',
-            content: `Resuma esta transcrição de chamada:\n\n${transcription}`
-          }
-        ],
-        max_tokens: 300,
-      }),
-    })
+    // ================================
+    // 3. RESUMIR TRANSCRIÇÃO COM GPT
+    // ================================
+    const respostaResumo = await fetch(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${OPENAI_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [
+            {
+              role: "system",
+              content:
+                "Você é um assistente que resume chamadas telefônicas. Extraia os pontos principais, ações necessárias e informações úteis.",
+            },
+            {
+              role: "user",
+              content: `Resuma esta transcrição de chamada:\n\n${transcricao}`,
+            },
+          ],
+          max_tokens: 300,
+        }),
+      }
+    );
 
-    const summaryData = await summaryResponse.json()
-    const summary = summaryData?.choices?.[0]?.message?.content
+    const dadosResumo = await respostaResumo.json();
+    const resumo = dadosResumo?.choices?.[0]?.message?.content ?? "";
 
-    // Atualizar banco de dados
-    if (call_id) {
+    // ================================
+    // 4. SALVAR NO BANCO DE DADOS
+    // ================================
+    if (id_da_chamada) {
       await supabase
-        .from('calls')
+        .from("chamadas")
         .update({
-          transcription,
-          summary,
+          transcricao,
+          resumo,
         })
-        .eq('id', call_id)
+        .eq("id", id_da_chamada);
     }
 
     // Registrar operação
-    await supabase.from('operations_log').insert([{
-      user_id,
-      op_type: 'asr_transcribe',
-      meta: {
-        call_id,
-        audio_url,
-        transcription_length: transcription.length,
-      }
-    }])
+    await supabase.from("log_de_operacoes").insert([
+      {
+        ID_do_usuario,
+        op_type: "asr_transcribe",
+        meta: {
+          id_da_chamada,
+          url_de_audio,
+          comprimento_da_transcricao: transcricao?.length ?? 0,
+        },
+      },
+    ]);
 
+    // ================================
+    // 5. RETORNAR RESPOSTA AO CLIENTE
+    // ================================
     return new Response(
       JSON.stringify({
-        transcription,
-        summary,
-        call_id,
+        transcricao,
+        resumo,
+        id_da_chamada,
       }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
-    )
-
-  } catch (error) {
-    console.error('Erro:', error)
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+  } catch (erro) {
+    console.error("Erro:", erro);
     return new Response(
-      JSON.stringify({ error: 'Erro ao transcrever áudio' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    )
+      JSON.stringify({ erro: "Erro ao transcrever áudio" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
   }
-})
+});
