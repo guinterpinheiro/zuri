@@ -1,18 +1,15 @@
-import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-// Cliente com service role (apenas server-side)
-export const supabaseAdmin = createClient(
+export const supabase = createSupabaseClient(
   supabaseUrl,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  }
-)
+  supabaseAnonKey
+);
+
+// ✅ EXPORT QUE O BUILD ESPERA
+export function createClient() {
+  return createSupabaseClient(supabaseUrl, supabaseAnonKey);
+}
