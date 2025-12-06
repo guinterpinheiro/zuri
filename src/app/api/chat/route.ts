@@ -1,33 +1,26 @@
-// Edge Runtime compatible with Vercel
+import { NextRequest, NextResponse } from 'next/server';
+
 export const runtime = 'edge';
 
-interface RequestBody {
-  user_id: string;
-  context_text: string;
-  style?: string;
-  conversation_id?: string;
-}
-
-export default async function handler(req: Request) {
-  // Only allow POST requests
-  if (req.method !== 'POST') {
-    return new Response(
-      JSON.stringify({ error: 'Method not allowed' }),
-      { status: 405, headers: { 'Content-Type': 'application/json' } }
-    );
-  }
-
+export async function POST(req: NextRequest) {
   try {
-    const { user_id, context_text, style = 'default', conversation_id }: RequestBody = await req.json();
+    const { user_id, context_text, style = 'default', conversation_id } = await req.json();
+
+    if (!user_id || !context_text) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
 
     const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
     const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!OPENAI_API_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-      return new Response(
-        JSON.stringify({ error: 'Missing required environment variables' }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      return NextResponse.json(
+        { error: 'Missing required environment variables' },
+        { status: 500 }
       );
     }
 
@@ -45,9 +38,9 @@ export default async function handler(req: Request) {
     const subscriptions = await subscriptionResponse.json();
 
     if (!subscriptions || subscriptions.length === 0) {
-      return new Response(
-        JSON.stringify({ error: 'Assinatura inativa ou não encontrada' }),
-        { status: 403, headers: { 'Content-Type': 'application/json' } }
+      return NextResponse.json(
+        { error: 'Assinatura inativa ou não encontrada' },
+        { status: 403 }
       );
     }
 
@@ -101,23 +94,20 @@ export default async function handler(req: Request) {
       }),
     });
 
-    return new Response(
-      JSON.stringify({
-        reply_text: reply,
-        tokens_used: openaiData?.usage?.total_tokens || 0,
-        meta: { style, model: 'gpt-4o-mini' }
-      }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
-    );
+    return NextResponse.json({
+      reply_text: reply,
+      tokens_used: openaiData?.usage?.total_tokens || 0,
+      meta: { style, model: 'gpt-4o-mini' }
+    });
 
   } catch (error) {
     console.error('Error:', error);
-    return new Response(
-      JSON.stringify({ 
+    return NextResponse.json(
+      { 
         error: 'Internal server error',
         details: error instanceof Error ? error.message : 'Unknown error'
-      }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      },
+      { status: 500 }
     );
   }
 }

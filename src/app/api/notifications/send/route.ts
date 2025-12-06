@@ -1,33 +1,26 @@
-// Edge Runtime compatible with Vercel
+import { NextRequest, NextResponse } from 'next/server';
+
 export const runtime = 'edge';
 
-interface RequestBody {
-  user_id: string;
-  title: string;
-  body: string;
-  data?: Record<string, any>;
-}
-
-export default async function handler(req: Request) {
-  // Only allow POST requests
-  if (req.method !== 'POST') {
-    return new Response(
-      JSON.stringify({ error: 'Method not allowed' }),
-      { status: 405, headers: { 'Content-Type': 'application/json' } }
-    );
-  }
-
+export async function POST(req: NextRequest) {
   try {
-    const { user_id, title, body, data = {} }: RequestBody = await req.json();
+    const { user_id, title, body, data = {} } = await req.json();
+
+    if (!user_id || !title || !body) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
 
     const FIREBASE_SERVER_KEY = process.env.FIREBASE_SERVER_KEY;
     const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!FIREBASE_SERVER_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-      return new Response(
-        JSON.stringify({ error: 'Missing required environment variables' }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      return NextResponse.json(
+        { error: 'Missing required environment variables' },
+        { status: 500 }
       );
     }
 
@@ -45,9 +38,9 @@ export default async function handler(req: Request) {
     const tokens = await tokensResponse.json();
 
     if (!tokens || tokens.length === 0) {
-      return new Response(
-        JSON.stringify({ error: 'Nenhum token encontrado para o usuário' }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      return NextResponse.json(
+        { error: 'Nenhum token encontrado para o usuário' },
+        { status: 404 }
       );
     }
 
@@ -96,23 +89,20 @@ export default async function handler(req: Request) {
       }),
     });
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        tokens_sent: fcmTokens.length,
-        fcm_response: fcmData,
-      }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
-    );
+    return NextResponse.json({
+      success: true,
+      tokens_sent: fcmTokens.length,
+      fcm_response: fcmData,
+    });
 
   } catch (error) {
     console.error('Error:', error);
-    return new Response(
-      JSON.stringify({ 
+    return NextResponse.json(
+      { 
         error: 'Erro ao enviar notificação',
         details: error instanceof Error ? error.message : 'Unknown error'
-      }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      },
+      { status: 500 }
     );
   }
 }

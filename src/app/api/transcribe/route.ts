@@ -1,32 +1,26 @@
-// Edge Runtime compatible with Vercel
+import { NextRequest, NextResponse } from 'next/server';
+
 export const runtime = 'edge';
 
-interface RequestBody {
-  user_id: string;
-  audio_url: string;
-  call_id?: string;
-}
-
-export default async function handler(req: Request) {
-  // Only allow POST requests
-  if (req.method !== 'POST') {
-    return new Response(
-      JSON.stringify({ error: 'Method not allowed' }),
-      { status: 405, headers: { 'Content-Type': 'application/json' } }
-    );
-  }
-
+export async function POST(req: NextRequest) {
   try {
-    const { user_id, audio_url, call_id }: RequestBody = await req.json();
+    const { user_id, audio_url, call_id } = await req.json();
+
+    if (!user_id || !audio_url) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
 
     const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
     const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!OPENAI_API_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-      return new Response(
-        JSON.stringify({ error: 'Missing required environment variables' }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      return NextResponse.json(
+        { error: 'Missing required environment variables' },
+        { status: 500 }
       );
     }
 
@@ -122,23 +116,20 @@ export default async function handler(req: Request) {
       }),
     });
 
-    return new Response(
-      JSON.stringify({
-        transcription,
-        summary,
-        call_id,
-      }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
-    );
+    return NextResponse.json({
+      transcription,
+      summary,
+      call_id,
+    });
 
   } catch (error) {
     console.error('Error:', error);
-    return new Response(
-      JSON.stringify({ 
+    return NextResponse.json(
+      { 
         error: 'Failed to transcribe audio',
         details: error instanceof Error ? error.message : 'Unknown error'
-      }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      },
+      { status: 500 }
     );
   }
 }
