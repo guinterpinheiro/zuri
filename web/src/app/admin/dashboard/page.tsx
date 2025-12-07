@@ -31,18 +31,7 @@ export default function DashboardPage() {
       .from("profiles")
       .select("*", { count: "exact", head: true });
 
-    // Usuários ativos (últimos 7 dias)
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-    const { data: activeUsersData } = await supabase
-  .from("profiles")
-  .select("id, last_seen_at")
-  .gte("last_seen_at", sevenDaysAgo.toISOString());
-
-const activeUsers = activeUsersData?.length ?? 0;
-
-const activeUsers = activeUsersData?.length ?? 0;
+    const activeUsers = 0;
 
     // Total de mensagens
     const { count: totalMessages } = await supabase
@@ -59,11 +48,6 @@ const activeUsers = activeUsersData?.length ?? 0;
     console.error("Erro ao carregar estatísticas:", error);
   } finally {
     setLoading(false);
-  }
-}
-    } finally {
-      setLoading(false);
-    }
   }
 
   const statCards = [
