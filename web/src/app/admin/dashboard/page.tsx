@@ -18,35 +18,28 @@ export default function DashboardPage() {
     revenue: 0,
   });
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadStats();
- useEffect(() => {
-  definirCarregando(false);
-}, []);
+const cards = [
+  {
+    title: "Total de Mensagens",
+    value: stats.totalMessages,
+    icon: MessageSquare,
+    color: "from-purple-500 to-purple-600",
   },
-    {
-      title: "Total de Mensagens",
-      value: stats.totalMessages,
-      icon: MessageSquare,
-      color: "from-purple-500 to-purple-600",
-    },
-    {
-      title: "Receita (MRR)",
-      value: `R$ ${stats.revenue.toFixed(2)}`,
-      icon: DollarSign,
-      color: "from-orange-500 to-orange-600",
-    },
-  ];
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
+  {
+    title: "Receita (MRR)",
+    value: `R$ ${stats.revenue.toFixed(2)}`,
+    icon: DollarSign,
+    color: "from-orange-500 to-orange-600",
+  },
+];
   }
-
+if (loading) {
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    </div>
+  );
+    }
   return (
     <div className="p-8">
       <div className="mb-8">
@@ -59,7 +52,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {statCards.map((card, index) => {
+        {cards.map((card, index) => {
           const Icon = card.icon;
           return (
             <div
