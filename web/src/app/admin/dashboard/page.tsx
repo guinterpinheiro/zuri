@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "../../../lib/supabase";
 import { Users, MessageSquare, Activity, DollarSign } from "lucide-react";
 
 interface Stats {
@@ -22,47 +21,10 @@ export default function DashboardPage() {
 
   useEffect(() => {
     loadStats();
-  }, []);
-
- async function loadStats() {
-  try {
-    // Total de usuários
-    const { count: totalUsers } = await supabase
-      .from("profiles")
-      .select("*", { count: "exact", head: true });
-
-    const activeUsers = 0;
-
-    // Total de mensagens
-    const { count: totalMessages } = await supabase
-      .from("messages")
-      .select("*", { count: "exact", head: true });
-
-    setStats({
-      totalUsers: totalUsers || 0,
-      activeUsers: activeUsers || 0,
-      totalMessages: totalMessages || 0,
-      revenue: 0
-    });
-  } catch (error) {
-    console.error("Erro ao carregar estatísticas:", error);
-  } finally {
-    setLoading(false);
-  }
-
-  const statCards = [
-    {
-      title: "Total de Usuários",
-      value: stats.totalUsers,
-      icon: Users,
-      color: "from-blue-500 to-blue-600",
-    },
-    {
-      title: "Usuários Ativos",
-      value: stats.activeUsers,
-      icon: Activity,
-      color: "from-green-500 to-green-600",
-    },
+ useEffect(() => {
+  definirCarregando(false);
+}, []);
+  },
     {
       title: "Total de Mensagens",
       value: stats.totalMessages,
