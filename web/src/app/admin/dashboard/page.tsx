@@ -42,6 +42,8 @@ export default function DashboardPage() {
 
 const activeUsers = activeUsersData?.length ?? 0;
 
+const activeUsers = activeUsersData?.length ?? 0;
+
     // Total de mensagens
     const { count: totalMessages } = await supabase
       .from("messages")
