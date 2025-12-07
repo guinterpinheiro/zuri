@@ -24,35 +24,39 @@ export default function DashboardPage() {
     loadStats();
   }, []);
 
-  async function loadStats() {
-    try {
+ async function loadStats() {
+  try {
+    // Total de usuários
+    const { count: totalUsers } = await supabase
+      .from("profiles")
+      .select("*", { count: "exact", head: true });
 
-      // Total de usuários
-      const { count: totalUsers } = await supabase
-        .from("profiles")
-        .select("*", { count: "exact", head: true });
+    // Usuários ativos (últimos 7 dias)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-      // Usuários ativos (últimos 7 dias)
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      const { count: activeUsers } = await supabase
-        .from("profiles")
-        .select("*", { count: "exact", head: true })
-        .gte("last_seen_at", sevenDaysAgo.toISOString());
+    const { count: activeUsers } = await supabase
+      .from("profiles")
+      .select("*", { count: "exact", head: true })
+      .gte("last_seen_at", sevenDaysAgo.toISOString());
 
-      // Total de mensagens
-      const { count: totalMessages } = await supabase
-        .from("messages")
-        .select("*", { count: "exact", head: true });
+    // Total de mensagens
+    const { count: totalMessages } = await supabase
+      .from("messages")
+      .select("*", { count: "exact", head: true });
 
-      setStats({
-        totalUsers: totalUsers || 0,
-        activeUsers: activeUsers || 0,
-        totalMessages: totalMessages || 0,
-        revenue: 0, // Implementar integração com Stripe
-      });
-    } catch (error) {
-      console.error("Erro ao carregar estatísticas:", error);
+    setStats({
+      totalUsers: totalUsers || 0,
+      activeUsers: activeUsers || 0,
+      totalMessages: totalMessages || 0,
+      revenue: 0
+    });
+  } catch (error) {
+    console.error("Erro ao carregar estatísticas:", error);
+  } finally {
+    setLoading(false);
+  }
+}
     } finally {
       setLoading(false);
     }
