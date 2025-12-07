@@ -37,7 +37,7 @@ export default function DashboardPage() {
 
     const { count: activeUsers } = await supabase
   .from("profiles")
-  .gte("last_seen_at", sevenDaysAgo.toISOString())
+  .filter("last_seen_at", "gte", sevenDaysAgo.toISOString())
   .select("*", { count: "exact", head: true });
 
     // Total de mensagens
