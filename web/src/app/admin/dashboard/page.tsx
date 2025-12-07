@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase";
+import { supabase } from "@/web/src/lib/supabase";
 import { Users, MessageSquare, Activity, DollarSign } from "lucide-react";
 
 interface Stats {
@@ -26,7 +26,7 @@ export default function DashboardPage() {
 
   async function loadStats() {
     try {
-      const supabase = createClient();
+      const supabase = criarCliente();
 
       // Total de usuários
       const { count: totalUsers } = await supabase
