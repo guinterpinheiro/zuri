@@ -35,9 +35,10 @@ export default function DashboardPage() {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    .from("profiles")
-.gte("last_seen_at", sevenDaysAgo.toISOString())
-.select("*", { count: "exact", head: true });
+    const { count: activeUsers } = await supabase
+  .from("profiles")
+  .gte("last_seen_at", sevenDaysAgo.toISOString())
+  .select("*", { count: "exact", head: true });
 
     // Total de mensagens
     const { count: totalMessages } = await supabase
