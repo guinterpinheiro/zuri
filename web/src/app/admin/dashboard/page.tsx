@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/web/src/lib/supabase";
+import { supabase } from "@/lib/sypabase";
 import { Users, MessageSquare, Activity, DollarSign } from "lucide-react";
 
 interface Stats {
