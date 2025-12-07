@@ -26,7 +26,6 @@ export default function DashboardPage() {
 
   async function loadStats() {
     try {
-      const supabase = criarCliente();
 
       // Total de usuários
       const { count: totalUsers } = await supabase
