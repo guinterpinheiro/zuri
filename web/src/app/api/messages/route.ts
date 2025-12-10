@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { sendMessageToAI, AIMessage } from '@/lib/openai'
+import { enviarMensagemParaIA, MensagemAI } from '@/biblioteca/openai'
 
 export async function POST(request: NextRequest) {
   try {
