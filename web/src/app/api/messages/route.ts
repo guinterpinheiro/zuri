@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
-import { enviarMensagemParaIA, MensagemAI } from '@/biblioteca/openai'
-
+import { sendMessageToAI } from "@/biblioteca/openai";
+import { supabase } from "@/biblioteca/supabase";
 export async function POST(request: NextRequest) {
   try {
     const { message, userId, conversationHistory } = await request.json()
